@@ -1,39 +1,27 @@
-package opensource.hexiano;
+package opensource.hexiano
 
-import android.app.Dialog;
-import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
+import android.app.Dialog
+import android.content.Context
 
-public class AboutDialog extends Dialog
+class AboutDialog(context: Context): Dialog(context)
 {
-    public AboutDialog(Context context)
-    {
-        super(context);
-        
-        String versionName;
-        try
-        {
-        	PackageManager pm = context.getPackageManager();
-        	String packageName = context.getPackageName();
-        	PackageInfo pi = pm.getPackageInfo(packageName, 0);
-            versionName = pi.versionName;
-        } 
-        catch (Exception ex)
-        {
-            versionName = "0.0a";
+    init {
+        val versionName: String = try {
+        	context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        } catch (ex: Exception) {
+            "0.0a"
         }
         
-        setContentView(R.layout.about);
-        CharSequence name = context.getText(R.string.app_name);
-        CharSequence versionStr = context.getText(R.string.version);
-        StringBuilder title = new StringBuilder(name);
-        title.append(" ").append(versionStr).append(" ").append(versionName);
-        this.setTitle(title);
+        setContentView(R.layout.about)
+        val name = context.getText(R.string.app_name)
+        val versionStr = context.getText(R.string.version)
+        val title = StringBuilder(name)
+        title.append(" ").append(versionStr).append(" ").append(versionName)
+        setTitle(title)
         
-        // TextView licenseView = (TextView) findViewById(R.id.license);
-        // CharSequence text = context.getText(R.string.license);
-        // licenseView.setText(Html.fromHtml(text));
-        // licenseView.setMovementMethod(LinkMovementMethod.getInstance());
+        // TextView licenseView = (TextView) findViewById(R.id.license)
+        // CharSequence text = context.getText(R.string.license)
+        // licenseView.setText(Html.fromHtml(text))
+        // licenseView.setMovementMethod(LinkMovementMethod.getInstance())
     }
 }
