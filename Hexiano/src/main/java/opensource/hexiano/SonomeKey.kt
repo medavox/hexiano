@@ -27,41 +27,29 @@ package opensource.hexiano;
 
 import android.content.Context;
 
-public class SonomeKey extends HexKey
-{
-	public SonomeKey(Context context, int radius, Point center,
-			int midiNoteNumber, Instrument instrument, int keyNumber)
-	{
-		super(context, radius, center, midiNoteNumber, instrument, keyNumber);
-	}
-
-	@Override
-	protected void getPrefs()
-	{
+class SonomeKey(
+	context: Context,
+	radius: Int,
+	center: Point,
+	midiNoteNumber: Int,
+	instrument: Instrument,
+	keyNumber: Int
+) : HexKey(context, radius, center, midiNoteNumber, instrument, keyNumber) {
+	override protected fun getPrefs() {
 		mKeyOrientation = mPrefs.getString("sonomeKeyOrientation", null);
 	}
 
-	@Override
-	public int getColor()
-	{
-		String sharpName = mNote.getSharpName();
-		int color = mWhiteColor;
-		if (sharpName.contains("#"))
-		{	
-			if (sharpName.contains("G"))
-			{
-				color = mBlackHighlightColor;
-			}
-			else
-			{
-				color = mBlackColor;
+	override fun getColor(): Int {
+		val sharpName = mNote.sharpName;
+		return if (sharpName.contains("#")) {
+			if (sharpName.contains("G")) {
+				mBlackHighlightColor;
+			} else {
+				mBlackColor
 			}	
 		}
-		else if (sharpName.contains("D"))
-		{
-			color = mWhiteHighlightColor;
-		}
-		
-		return color;
+		else if (sharpName.contains("D")) {
+			mWhiteHighlightColor
+		} else mWhiteColor
 	}
 }
