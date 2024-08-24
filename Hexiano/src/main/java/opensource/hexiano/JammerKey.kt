@@ -15,7 +15,7 @@
  *   3 of the License, or (at your option) any later version.              *
  *                                                                         *
  *   Hexiano is distributed in the hope that it will be useful,            *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   but WITHOUT ANY WARRANTY without even the implied warranty of        *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
  *   GNU General Public License for more details.                          *
  *                                                                         *
@@ -23,56 +23,40 @@
  *   along with Hexiano.  If not, see <http://www.gnu.org/licenses/>.      *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-package opensource.hexiano;
+package opensource.hexiano
 
-import android.content.Context;
-import android.util.Log;
+import android.content.Context
+import android.util.Log
 
-public class JammerKey extends HexKey
-{
-	public JammerKey(Context context, int radius, Point center,
-			int midiNoteNumber, Instrument instrument, int keyNumber)
-	{
-		super(context, radius, center, midiNoteNumber, instrument, keyNumber);
+class JammerKey(
+	context: Context,
+	radius: Int,
+	center: Point,
+	midiNoteNumber: Int,
+	instrument: Instrument,
+	keyNumber: Int
+) : HexKey(context, radius, center, midiNoteNumber, instrument, keyNumber ) {
+
+	override protected fun getPrefs() {
+		mKeyOrientation = mPrefs.getString("jammerKeyOrientation", null)
+		mKeyOverlap = mPrefs.getBoolean("jammerKeyOverlap", false)
 	}
 
-	@Override
-	protected void getPrefs()
-	{
-		mKeyOrientation = mPrefs.getString("jammerKeyOrientation", null);
-		mKeyOverlap = mPrefs.getBoolean("jammerKeyOverlap", false);
+	override fun getColor(): Int {
+		val sharpName = mNote.sharpName
+		val color = if (sharpName.contains("#")) {
+			if (sharpName.contains("G")) mBlackHighlightColor else mBlackColor
+		} else if (sharpName.contains("C"))  mWhiteHighlightColor else mWhiteColor
+		return color
 	}
 
-	@Override
-	public int getColor()
-	{
-		String sharpName = mNote.getSharpName();
-		int color = mWhiteColor;
-		if (sharpName.contains("#"))
-		{	
-			color = mBlackColor;
-			if (sharpName.contains("G"))
-			{
-				color = mBlackHighlightColor;
-			}
-		}
-		else if (sharpName.contains("C"))
-		{
-			color = mWhiteHighlightColor;
-		}
-		
-		return color;
-	}
-
-	@Override
-	public boolean overlapContains(int x, int y)
-	{
+	override fun overlapContains(x: Int, y: Int): Boolean {
 		if (x >= mLowerLeft.x && x <= mLowerRight.x &&
 			y >= mTop.y && y <= mBottom.y)
 		{
-			Log.d("HexKey::overlapContains", "Contains");
-			return true;
+			Log.d("HexKey::overlapContains", "Contains")
+			return true
 		}
-		return false;
+		return false
 	}
 }
