@@ -6,7 +6,7 @@
  *   FILE: CC.java                                                         *
  *                                                                         *
  *   This file is part of Hexiano, an open-source project hosted at:       *
- *   https://github.com/lrq3000/hexiano                                         *
+ *   https://github.com/lrq3000/hexiano                                    *
  *                                                                         *
  *   Hexiano is free software: you can redistribute it and/or              *
  *   modify it under the terms of the GNU General Public License           *
@@ -23,99 +23,60 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package opensource.hexiano;
+package opensource.hexiano
 
-import java.util.HashMap;
-
-public class CC
-{
-	protected int mOctave;
-	protected String mCCName;
-	protected int mMidiCCNumber;
+class CC(
+	protected val mMidiCCNumber: Int,
 	/**Just for reference, can be shown as a label on the key, but useless otherwise for the Note*/
-	protected int mKeyNumber;
-	
-	public CC(int midiNumber, int keyNumber)
-	{
-	    mMidiCCNumber = midiNumber;
-	    mKeyNumber = keyNumber;
-	    mCCName = this.getModifierNameForNoteNumber(mMidiCCNumber);
-		mOctave = 1;
+	protected val mKeyNumber: Int
+) {
+	protected val mOctave: Int
+	protected val mCCName: String?
+
+
+	init {
+	    mCCName = getModifierNameForNoteNumber(mMidiCCNumber)
+		mOctave = 1
 	}
 	
-	static final HashMap<Integer, String> mModifierForNumber;
-	static
-	{
-	    mModifierForNumber = new HashMap<Integer, String>();
-	    mModifierForNumber.put(1, "Mod");
-	    mModifierForNumber.put(7, "Volume");
-	    mModifierForNumber.put(10, "Pan");
-	    mModifierForNumber.put(11, "Expression");
-	    mModifierForNumber.put(64, "Sustain");
-	}
-	
-	static final HashMap<String, Integer> mNumberForModifier;
-	static
-	{
-	    mNumberForModifier = new HashMap<String, Integer>();
-	    mNumberForModifier.put("Mod", 1);
-	    mNumberForModifier.put("Volume", 7);
-	    mNumberForModifier.put("Pan", 10);
-	    mNumberForModifier.put("Expression", 11);
-	    mNumberForModifier.put("Sustain", 64);
-	}
-	
-	public String getCCName()
-	{
-		return mCCName + mOctave;
+	fun getCCName(): String = mCCName + mOctave
+
+	fun getMidiCCNumber(): Int = mMidiCCNumber
+
+	fun getDisplayString(labelType: String, showOctave: Boolean): String = when (labelType) {
+		"None" -> ""
+		"Key Number (DEV)" -> "" + mKeyNumber
+		"MIDI Note Number" -> "CC$mMidiCCNumber"
+		 else -> {
+			 val name: String? = getModifierNameForNoteNumber(mMidiCCNumber)
+			 if (name?.isNotEmpty() == true) name else "CC?"
+		 }
 	}
 
-	public int getMidiCCNumber()
-	{
-		return mMidiCCNumber;
+	fun getModifierNameForNoteNumber(midiNoteNumber: Int): String? = mModifierForNumber[midiNoteNumber]
+
+	fun getCCNameForNoteNumber(midiNoteNumber: Int): String? {
+		val flatNumber = midiNoteNumber % 12
+		return mModifierForNumber[flatNumber]
 	}
 
-	public String getDisplayString(String labelType, boolean showOctave)
-	{
-		String noteStr = "CC?";
-	
-	    if (labelType.equals("None"))
-	    {
-	    	return "";
-	    }
-	    else if (labelType.equals("Key Number (DEV)"))
-	    {
-	    	return("" + mKeyNumber);
-	    }
-	    else if (labelType.equals("MIDI Note Number"))
-	    {
-	    	return("CC" + mMidiCCNumber);
-	    }
-	    else
-	    {
-	    	String name = getModifierNameForNoteNumber(mMidiCCNumber);
-	    	if (name.length() > 0) {
-	    		return name;
-	    	} else {
-	    		return(noteStr);
-	    	}
-	    }
-	}
+	companion object {
+		fun getNoteNumber(modifierName: String): Int? = mNumberForModifier[modifierName]
 
-	public static int getNoteNumber(String modifierName)
-	{
-		int CCNumber = mNumberForModifier.get(modifierName);
-		return CCNumber;
-	}
-	
-	public String getModifierNameForNoteNumber(int midiNoteNumber)
-	{		
-		return mModifierForNumber.get(midiNoteNumber);
-	}
-	
-	public String getCCNameForNoteNumber(int midiNoteNumber)
-	{		
-		int flatNumber = midiNoteNumber % 12;
-		return mModifierForNumber.get(flatNumber);
+		val mModifierForNumber = mapOf<Int, String> (
+			 1 to "Mod",
+			 7 to "Volume",
+			10 to "Pan",
+			11 to "Expression",
+			64 to "Sustain",
+		)
+
+		val mNumberForModifier = mapOf<String, Int>(
+			"Mod" to 1,
+			"Volume" to 7,
+			"Pan" to 10,
+			"Expression" to 11,
+			"Sustain" to 64,
+		)
 	}
 }
