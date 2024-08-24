@@ -16,7 +16,7 @@
  *   3 of the License, or (at your option) any later version.              *
  *                                                                         *
  *   Hexiano is distributed in the hope that it will be useful,            *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   but WITHOUT ANY WARRANTY without even the implied warranty of        *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
  *   GNU General Public License for more details.                          *
  *                                                                         *
@@ -25,242 +25,199 @@
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package opensource.hexiano;
+package opensource.hexiano
 
-import java.util.HashMap;
+import java.util.HashMap
 
-public class Note
-{
-	protected int mOctave;
-	protected String mFlatName;
-    protected String mSharpName;
-	protected int mMidiNoteNumber;
+class Note(
+	protected val mMidiNoteNumber: Int,
 	/**Just for reference, can be shown as a label on the key, but useless otherwise for the Note*/
-	protected int mKeyNumber;
-	
-	static final HashMap<String, String> mToGerman;
-	static
-	{
-		mToGerman = new HashMap<String, String>();
-		mToGerman.put("A", "A");
-		mToGerman.put("A#", "ais");
-		mToGerman.put("Bb", "B");
-		mToGerman.put("B", "H");
-		mToGerman.put("C", "C");
-		mToGerman.put("C#", "cis");
-		mToGerman.put("Db", "des");
-		mToGerman.put("D", "D");
-		mToGerman.put("D#", "dis");
-		mToGerman.put("Eb", "es");
-		mToGerman.put("E", "E");
-		mToGerman.put("F", "F");
-		mToGerman.put("F#", "fis");
-		mToGerman.put("Gb", "ges");
-		mToGerman.put("G", "G");
-		mToGerman.put("G#", "gis");
-		mToGerman.put("Ab", "as");
-	}
+	protected val mKeyNumber: Int
+) {
+	protected val mOctave: Int
+	protected val mFlatName: String?
+    protected val mSharpName: String?
 
-/**	 We should use \u266F for the sharp symbol, but this has a lot of
-	 extra space around it for some reason. So, for now, we will just
-	 use the # character.*/
-	static final HashMap<String, String> mToSolfege;
-	static
-	{
-		mToSolfege = new HashMap<String, String>();
-		mToSolfege.put("A", "La");
-		mToSolfege.put("A#", "La#");
-		mToSolfege.put("Bb", "Si\u266D");
-		mToSolfege.put("B", "Si");
-		mToSolfege.put("C", "Do");
-		mToSolfege.put("C#", "Do#");
-		mToSolfege.put("Db", "Re\u266D");
-		mToSolfege.put("D", "Re");
-		mToSolfege.put("D#", "Re#");
-		mToSolfege.put("Eb", "Mi\u266D");
-		mToSolfege.put("E", "Mi");
-		mToSolfege.put("F", "Fa");
-		mToSolfege.put("F#", "Fa#");
-		mToSolfege.put("Gb", "Sol\u266D");
-		mToSolfege.put("G", "Sol");
-		mToSolfege.put("G#", "Sol#");
-		mToSolfege.put("Ab", "La\u266D");
+	init {
+		mFlatName = getFlatNameForNoteNumber(mMidiNoteNumber)
+		mSharpName = getSharpNameForNoteNumber(mMidiNoteNumber)
+		mOctave = getOctaveForNoteNumber(mMidiNoteNumber)
 	}
 	
-	static final HashMap<String, String> mToEnglish;
-	static
-	{
-		mToEnglish = new HashMap<String, String>();
-		mToEnglish.put("A", "A");
-		mToEnglish.put("A#", "A#");
-		mToEnglish.put("Bb", "B\u266D");
-		mToEnglish.put("B", "B");
-		mToEnglish.put("C", "C");
-		mToEnglish.put("C#", "C#");
-		mToEnglish.put("Db", "D\u266D");
-		mToEnglish.put("D", "D");
-		mToEnglish.put("D#", "D#");
-		mToEnglish.put("Eb", "E\u266D");
-		mToEnglish.put("E", "E");
-		mToEnglish.put("F", "F");
-		mToEnglish.put("F#", "F#");
-		mToEnglish.put("Gb", "G\u266D");
-		mToEnglish.put("G", "G");
-		mToEnglish.put("G#", "G#");
-		mToEnglish.put("Ab", "A\u266D");
-	}
-	
-	public Note(int midiNumber, int keyNumber)
-	{
-	    mMidiNoteNumber = midiNumber;
-	    mKeyNumber = keyNumber;
-	    mFlatName = this.getFlatNameForNoteNumber(mMidiNoteNumber);
-	    mSharpName = this.getSharpNameForNoteNumber(mMidiNoteNumber);
-	    mOctave = this.getOctaveForNoteNumber(mMidiNoteNumber);
-	}
-	
-	public String getFlatName()
-	{
-		return mFlatName + mOctave;
-	}
-	
-	public String getSharpName()
-	{
-		return mSharpName + mOctave;
-	}
+	fun getFlatName() = mFlatName + mOctave
 
-	public int getMidiNoteNumber()
-	{
-		return mMidiNoteNumber;
-	}
+	fun getSharpName() = mSharpName + mOctave
 
-	public String getDisplayString(String labelType, boolean showOctave)
-	{
-		String noteStr = "?";
-	
-	    if (labelType.equals("None"))
-	    {
-	    	return "";
-	    }
-	    else if (labelType.equals("Key Number (DEV)"))
-	    {
-	    	return("" + mKeyNumber);
-	    }
-	    else if (labelType.equals("MIDI Note Number"))
-	    {
-	    	return("" + mMidiNoteNumber);
-	    }
-	    else if (labelType.equals("Whole Tone Number"))
-	    {
-	    	noteStr = "" + mMidiNoteNumber/2;
-	    	if (mMidiNoteNumber % 2 == 1)
-	    	{
-	    		noteStr += ".5";
-	    	}
-	    	
-	    	return(noteStr);
-	    }
-	    else if (labelType.equals("Deutsch"))
-		{
-		    noteStr = mToGerman.get(mSharpName);
-		}
-		else if (labelType.equals("English"))
-		{
-		    noteStr = mToEnglish.get(mSharpName);
-		}
-		else if (labelType.equals("Solfege"))
-		{
-		    noteStr = mToSolfege.get(mSharpName);
+	fun getMidiNoteNumber(): Int = mMidiNoteNumber
+
+	fun getDisplayString(labelType: String, showOctave: Boolean): String {
+		var noteStr: String = "?"
+
+		when (labelType) {
+			"None" -> {
+				return ""
+			}
+			"Key Number (DEV)" -> {
+				return("" + mKeyNumber)
+			}
+			"MIDI Note Number" -> {
+				return("" + mMidiNoteNumber)
+			}
+			"Whole Tone Number" -> {
+				noteStr = "" + mMidiNoteNumber/2
+				if (mMidiNoteNumber % 2 == 1) {
+					noteStr += ".5"
+				}
+
+				return(noteStr)
+			}
+			"Deutsch" -> {
+				noteStr = mToGerman[mSharpName]!!
+			}
+			"English" -> {
+				noteStr = mToEnglish[mSharpName]!!
+			}
+			"Solfege" -> {
+				noteStr = mToSolfege[mSharpName]!!
+			}
 		}
 	  
 		if (showOctave)
 		{
-			noteStr += mOctave;
+			noteStr += mOctave
 		}
 	    
-	    return(noteStr);
-	}
-	
-	static final HashMap<Integer, String> mFlatForNumber;
-	static
-	{
-	    mFlatForNumber = new HashMap<Integer, String>();
-	    mFlatForNumber.put(0, "C");
-	    mFlatForNumber.put(1, "Db");
-	    mFlatForNumber.put(2, "D");
-	    mFlatForNumber.put(3, "Eb");
-	    mFlatForNumber.put(4, "E");
-	    mFlatForNumber.put(5, "F");
-	    mFlatForNumber.put(6, "Gb");
-	    mFlatForNumber.put(7, "G");
-	    mFlatForNumber.put(8, "Ab");
-	    mFlatForNumber.put(9, "A");
-	    mFlatForNumber.put(10, "Bb");
-	    mFlatForNumber.put(11, "B");
+	    return(noteStr)
 	}
 
-	static final HashMap<Integer, String> mSharpForNumber;
-	static
-	{
-	    mSharpForNumber = new HashMap<Integer, String>();
-	    mSharpForNumber.put(0, "C");
-	    mSharpForNumber.put(1, "C#");
-	    mSharpForNumber.put(2, "D");
-	    mSharpForNumber.put(3, "D#");
-	    mSharpForNumber.put(4, "E");
-	    mSharpForNumber.put(5, "F");
-	    mSharpForNumber.put(6, "F#");
-	    mSharpForNumber.put(7, "G");
-	    mSharpForNumber.put(8, "G#");
-	    mSharpForNumber.put(9, "A");
-	    mSharpForNumber.put(10, "A#");
-	    mSharpForNumber.put(11, "B");
-	}
+	companion object {
+		val mToGerman = mapOf<String, String>(
+			"A"  to "A",
+			"A#" to "ais",
+			"Bb" to "B",
+			"B"  to "H",
+			"C"  to "C",
+			"C#" to "cis",
+			"Db" to "des",
+			"D"  to "D",
+			"D#" to "dis",
+			"Eb" to "es",
+			"E"  to "E",
+			"F"  to "F",
+			"F#" to "fis",
+			"Gb" to "ges",
+			"G"  to "G",
+			"G#" to "gis",
+			"Ab" to "as",
+		)
 
-	static final HashMap<String, Integer> mNumberForSharp;
-	static
-	{
-	    mNumberForSharp = new HashMap<String, Integer>();
-	    mNumberForSharp.put("C", 0);
-	    mNumberForSharp.put("C#", 1);
-	    mNumberForSharp.put("D", 2);
-	    mNumberForSharp.put("D#", 3);
-	    mNumberForSharp.put("E", 4);
-	    mNumberForSharp.put("F", 5);
-	    mNumberForSharp.put("F#", 6);
-	    mNumberForSharp.put("G", 7);
-	    mNumberForSharp.put("G#", 8);
-	    mNumberForSharp.put("A", 9);
-	    mNumberForSharp.put("A#", 10);
-	    mNumberForSharp.put("B", 11);
-	}
+		/**	We should use \u266F for the sharp symbol, but this has a lot of
+		extra space around it for some reason. So, for now, we will just
+		use the # character.*/
+		val mToSolfege = mapOf<String, String>(
+			"A"  to "La",
+			"A#" to "La#",
+			"Bb" to "Si\u266D",
+			"B"  to "Si",
+			"C"  to "Do",
+			"C#" to "Do#",
+			"Db" to "Re\u266D",
+			"D"  to "Re",
+			"D#" to "Re#",
+			"Eb" to "Mi\u266D",
+			"E"  to "Mi",
+			"F"  to "Fa",
+			"F#" to "Fa#",
+			"Gb" to "Sol\u266D",
+			"G"  to "Sol",
+			"G#" to "Sol#",
+			"Ab" to "La\u266D",
+		)
 
-	public static int getNoteNumber(String sharpName, int octave)
-	{
-		int noteNumber = octave * 12 + mNumberForSharp.get(sharpName) + 12;
-		return noteNumber;
+		val mToEnglish = mapOf<String, String>(
+			"A"  to "A",
+			"A#" to "A#",
+			"Bb" to "B\u266D",
+			"B"  to "B",
+			"C"  to "C",
+			"C#" to "C#",
+			"Db" to "D\u266D",
+			"D"  to "D",
+			"D#" to "D#",
+			"Eb" to "E\u266D",
+			"E"  to "E",
+			"F"  to "F",
+			"F#" to "F#",
+			"Gb" to "G\u266D",
+			"G"  to "G",
+			"G#" to "G#",
+			"Ab" to "A\u266D",
+		)
+
+		val mFlatForNumber = mapOf<Int, String>(
+			 0 to "C",
+			 1 to "Db",
+			 2 to "D",
+			 3 to "Eb",
+			 4 to "E",
+			 5 to "F",
+			 6 to "Gb",
+			 7 to "G",
+			 8 to "Ab",
+			 9 to "A",
+			10 to "Bb",
+			11 to "B",
+		)
+
+		val mSharpForNumber = mapOf<Int, String>(
+			 0 to "C",
+			 1 to "C#",
+			 2 to "D",
+			 3 to "D#",
+			 4 to "E",
+			 5 to "F",
+			 6 to "F#",
+			 7 to "G",
+			 8 to "G#",
+			 9 to "A",
+			10 to "A#",
+			11 to "B",
+		)
+
+		val mNumberForSharp = mapOf<String, Int>(
+			"C"  to 0,
+			"C#" to 1,
+			"D"  to 2,
+			"D#" to 3,
+			"E"  to 4,
+			"F"  to 5,
+			"F#" to 6,
+			"G"  to 7,
+			"G#" to 8,
+			"A"  to 9,
+			"A#" to 10,
+			"B"  to 11,
+		)
+
+		fun getNoteNumber(sharpName: String, octave: Int): Int {
+			val noteNumber: Int = (octave * 12) + mNumberForSharp[sharpName]!! + 12
+			return noteNumber
+		}
+	}
+	fun getModifierNameForNoteNumber(midiNoteNumber: Int): String = mFlatForNumber[midiNoteNumber]!!
+
+	fun getFlatNameForNoteNumber(midiNoteNumber: Int): String {
+		val flatNumber: Int = midiNoteNumber % 12
+		return mFlatForNumber[flatNumber]!!
 	}
 	
-	public String getModifierNameForNoteNumber(int midiNoteNumber)
-	{		
-		return mFlatForNumber.get(midiNoteNumber);
+	fun getSharpNameForNoteNumber(midiNoteNumber: Int): String {
+		val flatNumber: Int = midiNoteNumber % 12
+		return mSharpForNumber[flatNumber]!!
 	}
 	
-	public String getFlatNameForNoteNumber(int midiNoteNumber)
-	{		
-		int flatNumber = midiNoteNumber % 12;
-		return mFlatForNumber.get(flatNumber);
-	}
-	
-	public String getSharpNameForNoteNumber(int midiNoteNumber)
-	{		
-		int flatNumber = midiNoteNumber % 12;
-		return mSharpForNumber.get(flatNumber);
-	}
-	
-	public int getOctaveForNoteNumber(int midiNoteNumber)
-	{
-		int octavePlusOne = midiNoteNumber/12;
-		return octavePlusOne - 1;
+	fun getOctaveForNoteNumber(midiNoteNumber: Int): Int {
+		val octavePlusOne: Int = midiNoteNumber/12
+		return octavePlusOne - 1
 	}
 }
