@@ -15,7 +15,7 @@
  *   3 of the License, or (at your option) any later version.              *
  *                                                                         *
  *   Hexiano is distributed in the hope that it will be useful,            *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   but WITHOUT ANY WARRANTY without even the implied warranty of        *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
  *   GNU General Public License for more details.                          *
  *                                                                         *
@@ -23,56 +23,29 @@
  *   along with Hexiano.  If not, see <http://www.gnu.org/licenses/>.      *
  *                                                                         *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-package opensource.hexiano;
+package opensource.hexiano
 
-import android.content.Context;
+import android.content.Context
 
-public class JankoKey extends HexKey
-{
-	private int mOctaveGroupNumber;
+class JankoKey(
+	context: Context,
+	radius: Int,
+	center: Point,
+	midiNoteNumber: Int,
+	instrument: Instrument,
+	keyNumber: Int,
+	private var mOctaveGroupNumber: Int
+) : HexKey(context, radius, center, midiNoteNumber, instrument, keyNumber) {
+
+	protected override fun getPrefs()
+	{
+		mKeyOrientation = mPrefs.getString("jankoKeyOrientation", null)
+	}
+
+	private fun inOddOctave(): Boolean = mOctaveGroupNumber % 2 != 0
 	
-	public JankoKey(Context context, int radius, Point center,
-			int midiNoteNumber, Instrument instrument, int keyNumber, int octaveGroupNumber)
-	{
-		super(context, radius, center, midiNoteNumber, instrument, keyNumber);
-
-        mOctaveGroupNumber = octaveGroupNumber;
+	override fun getColor(): Int = if (mNote.sharpName.contains("#")) {
+		if (inOddOctave()) mBlackHighlightColor else mBlackColor
 	}
-
-	@Override
-	protected void getPrefs()
-	{
-		mKeyOrientation = mPrefs.getString("jankoKeyOrientation", null);
-	}
-
-	private boolean inOddOctave()
-	{
-		if (mOctaveGroupNumber % 2 == 0)
-		{
-			return false;
-		}
-		
-		return true;
-	}
-	
-	@Override
-	public int getColor()
-	{
-		String sharpName = mNote.getSharpName();
-		int color = mWhiteColor;
-		if (sharpName.contains("#"))
-		{	
-			color = mBlackColor;
-			if (inOddOctave())
-			{
-				color = mBlackHighlightColor;
-			}
-		}
-		else if (inOddOctave())
-		{
-			color = mWhiteHighlightColor;
-		}
-		
-		return color;
-	}
+	else if (inOddOctave()) mWhiteHighlightColor else mWhiteColor
 }
