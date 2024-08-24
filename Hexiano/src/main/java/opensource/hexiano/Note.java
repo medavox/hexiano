@@ -35,7 +35,8 @@ public class Note
 	protected String mFlatName;
     protected String mSharpName;
 	protected int mMidiNoteNumber;
-	protected int mKeyNumber; // Just for reference, can be shown as a label on the key, but useless otherwise for the Note
+	/**Just for reference, can be shown as a label on the key, but useless otherwise for the Note*/
+	protected int mKeyNumber;
 	
 	static final HashMap<String, String> mToGerman;
 	static
@@ -60,9 +61,9 @@ public class Note
 		mToGerman.put("Ab", "as");
 	}
 
-	// We should use \u266F for the sharp symbol, but this has a lot of
-	// extra space around it for some reason. So, for now, we will just
-	// use the # character.
+/**	 We should use \u266F for the sharp symbol, but this has a lot of
+	 extra space around it for some reason. So, for now, we will just
+	 use the # character.*/
 	static final HashMap<String, String> mToSolfege;
 	static
 	{
