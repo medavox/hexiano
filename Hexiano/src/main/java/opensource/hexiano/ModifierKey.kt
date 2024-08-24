@@ -26,13 +26,16 @@ package opensource.hexiano;
 
 import android.content.Context;
 
-public abstract class ModifierKey extends HexKey
-{
-	public ModifierKey(Context context, int radius, Point center,
-			int midiNoteNumber, Instrument instrument, int keyNumber)
-	{
-		super(context, radius, center, midiNoteNumber, instrument, keyNumber);
-		mNote = null;
-		mCC = new CC(midiNoteNumber, keyNumber);
+abstract class ModifierKey(
+	context: Context,
+	radius: Int,
+	center: Point,
+	midiNoteNumber: Int,
+	instrument: Instrument,
+	keyNumber: Int
+) : HexKey(context, radius, center, midiNoteNumber, instrument, keyNumber) {
+	init {
+		mNote = null
+		mCC = CC(midiNoteNumber, keyNumber)
 	}
 }
