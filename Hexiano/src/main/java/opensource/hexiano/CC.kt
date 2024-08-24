@@ -32,7 +32,8 @@ public class CC
 	protected int mOctave;
 	protected String mCCName;
 	protected int mMidiCCNumber;
-	protected int mKeyNumber; // Just for reference, can be shown as a label on the key, but useless otherwise for the Note
+	/**Just for reference, can be shown as a label on the key, but useless otherwise for the Note*/
+	protected int mKeyNumber;
 	
 	public CC(int midiNumber, int keyNumber)
 	{
