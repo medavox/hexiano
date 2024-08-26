@@ -30,6 +30,8 @@ package opensource.hexiano
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import opensource.hexiano.SoundLoadingTuple.LoadingResource.AndroidResourceId
+import opensource.hexiano.SoundLoadingTuple.LoadingResource.ExternalFilePath
 import java.util.TreeMap
 import kotlin.math.pow
 
@@ -62,12 +64,12 @@ abstract class Instrument(private val mContext: Context) {
 
 	/** = notes_load_queue.next();
 	 * temporary holder that contains all sounds file (of different velocities) for one midi note*/
-	val currListOfTuples: MutableList<List<*>> = mutableListOf()
+	var currListOfTuples: MutableList<SoundLoadingTuple> = mutableListOf()
 
 	/** = currListOfTuples.iterator() contains one sound file at a time*/
-	var sound_load_queue: Iterator<List<*>> = object: Iterator<List<*>>{
+	var sound_load_queue: Iterator<SoundLoadingTuple> = object: Iterator<SoundLoadingTuple>{
 		override fun hasNext(): Boolean = false
-		override fun next(): List<*> = arrayListOf<Any>()
+		override fun next(): SoundLoadingTuple = TODO()
 	}
 
 	// Sounds holder variables (when loading is completed)
@@ -90,41 +92,22 @@ abstract class Instrument(private val mContext: Context) {
 	 * Format: [midiNote, rootNote]*/
 	val mRootNotes = mutableMapOf<Int, Int>()
 
-	/**Load into SoundPool a sound from the APK resources*/
-	fun addSound(midiNoteNumber: Int, velocity: Int, soundId: Int) { // soundId is the APK ressource ID (given by java) index is the midiNoteNumber
+	/** Load into a sound into [SoundPool] from either a given path (eg: on SD card), or from the APK resources
+	 * @param tuple A [SoundLoadingTuple] specifying the data needed to load the sound
+	 */
+	fun addSound(tuple: SoundLoadingTuple) {
 		// If there's already an entry for this midinote, we update it to add the velocity subentry
-		if (mSounds.containsKey(midiNoteNumber)) {
-			val velocity_soundid: TreeMap<Int, Int>? = mSounds.get(midiNoteNumber) // fetch the midinote entry (containing all previous velocity subentries)
-			velocity_soundid?.put(velocity, Play.mSoundPool.load(mContext, soundId, 1)) // add the velocity subentry
-			mSounds.put(midiNoteNumber, velocity_soundid) // update it back into the midinote entry
-		// Else there's no entry for this midinote, we just create it
-		} else {
-			// Just create an entry for this midinote and use the velocity as the only subentry (until it gets updated if there are other velocities available for this midi note)
-			val velocity_soundid: TreeMap<Int, Int> = TreeMap<Int, Int>()
-			velocity_soundid.put(velocity, Play.mSoundPool.load(mContext, soundId, 1))
-			mSounds.put(midiNoteNumber, velocity_soundid)
+		// else there's no entry for this midinote, we just create it
+		val velocity_soundid: TreeMap<Int, Int> = mSounds[tuple.midiNoteNumber] ?: TreeMap<Int, Int>()// fetch the midinote entry (containing all previous velocity subentries)
+		val velocityForSound: Int = when(tuple.resource) {
+			is AndroidResourceId -> Play.mSoundPool?.load(mContext, tuple.resource.id, 1)!!
+			is ExternalFilePath -> Play.mSoundPool?.load(tuple.resource.path, 1)!!
 		}
+		velocity_soundid[tuple.velocity] = velocityForSound
+		mSounds[tuple.midiNoteNumber] = velocity_soundid
 	}
 
-	/** Load into SoundPool an external sound from a given path (eg: on SD card) */
-	fun addSound(midiNoteNumber: Int, velocity: Int, path: String) // path is the full path to a sound file index is the midiNoteNumber
-	{
-		// If there's already an entry for this midinote, we update it to add the velocity subentry
-		if (mSounds.containsKey(midiNoteNumber)) {
-			val velocity_soundid: TreeMap<Int, Int>? = mSounds.get(midiNoteNumber) // fetch the midinote entry (containing all previous velocity subentries)
-			velocity_soundid?.put(velocity, Play.mSoundPool.load(path, 1)) // add the velocity subentry
-			mSounds[midiNoteNumber] = velocity_soundid // update it back into the midinote entry
-		// Else there's no entry for this midinote, we just create it
-		} else {
-			// Just create an entry for this midinote and use the velocity as the only subentry
-			// (until it gets updated if there are other velocities available for this midi note)
-			val velocity_soundid: TreeMap<Int, Int> = TreeMap<Int, Int>()
-			velocity_soundid.put(velocity, Play.mSoundPool.load(path, 1))
-			mSounds.put(midiNoteNumber, velocity_soundid)
-		}
-	}
-
-	// Limit the range of sounds and notes to the given list of notes
+	/** Limit the range of sounds and notes to the given list of notes*/
 	fun limitRange(ListOfMidiNotesNumbers: List<Int>) {
 		// -- Delete first the root notes that are not directly used
 		// (if the rootNote is not visible then we just delete its entry in mRootNotes and mRates,
@@ -172,8 +155,8 @@ abstract class Instrument(private val mContext: Context) {
 		notes_load_queue = sounds_to_load.values.iterator()
 	}
 
+	/** Extrapolate missing notes from Root Notes (notes for which we have a sound file)*/
 	fun extrapolateSoundNotes() {
-		// Extrapolate missing notes from Root Notes (notes for which we have a sound file)
 		var previousRate = 1.0f
 		var previousRootNote = -1
 		 /**Notes before any root note, that we will extrapolate (by downpitching) as soon as we find one root note.
@@ -196,11 +179,11 @@ abstract class Instrument(private val mContext: Context) {
 					// Only if we have before notes to extrapolate
 					if (beforeEmptyNotes.size > 0) {
 						for (bNoteId: Int in beforeEmptyNotes) {
-							mRootNotes.put(bNoteId, previousRootNote)
+							mRootNotes[bNoteId] = previousRootNote
 
 							// a = b / (2^1/12)^n , with n positive number of semitones between frequency a and b
-							val beforeRate = previousRate / Math.pow(Math.pow(2.0, oneTwelfth), (previousRootNote-bNoteId).toDouble())
-							mRates.put(bNoteId, beforeRate.toFloat())
+							val beforeRate = previousRate / 2.0.pow(oneTwelfth).pow((previousRootNote - bNoteId).toDouble())
+							mRates[bNoteId] = beforeRate.toFloat()
 							// Update the min and max rate found (only used for warning message)
 							if (beforeRate < minRate) minRate = beforeRate.toFloat()
 							if (beforeRate > maxRate) maxRate = beforeRate.toFloat()
@@ -237,9 +220,7 @@ abstract class Instrument(private val mContext: Context) {
 		}
 	}
 
-	fun play(midiNoteNumber: Int, pressure: Int): IntArray {
-		return this.play(midiNoteNumber, pressure.toFloat(), 0)
-	}
+	fun play(midiNoteNumber: Int, pressure: Int) = play(midiNoteNumber, pressure.toFloat(), 0)
 
 	/**Play a note sound given the midi number,
 	 * the pressure and optionally a loop number
@@ -339,8 +320,8 @@ abstract class Instrument(private val mContext: Context) {
 		// with volumes proportional to the user's velocity to interpolate the missing velocity sound
 		return if (soundid2 != 0) {
 			intArrayOf(
-				Play.mSoundPool.play(soundid, stream1Volume.toFloat(), stream1Volume, 1, 0, rate),
-				Play.mSoundPool.play(soundid2, stream2Volume, stream2Volume, 1, 0, rate)
+				Play.mSoundPool?.play(soundid, stream1Volume.toFloat(), stream1Volume, 1, 0, rate),
+				Play.mSoundPool?.play(soundid2, stream2Volume, stream2Volume, 1, 0, rate)
 			)
 			// Else no interpolation, we have found an exact match for the user's velocity
 		} else {
