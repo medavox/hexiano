@@ -14,7 +14,7 @@
  *   3 of the License, or (at your option) any later version.              *
  *                                                                         *
  *   Hexiano is distributed in the hope that it will be useful,            *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   but WITHOUT ANY WARRANTY without even the implied warranty of        *
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
  *   GNU General Public License for more details.                          *
  *                                                                         *
@@ -62,7 +62,7 @@ studio location is in Raleigh, North Carolina.
 http://zenph.com/
 Samples from the OLPC sound sample library:
 
-This huge collection of new and original samples have been donated
+This huge collection of and original samples have been donated
 to Dr. Richard Boulanger @ cSounds.com specifically to support the
 OLPC developers, students, XO users, and computer and electronic
 musicians everywhere. They are FREE and are offered under a CC-BY
@@ -75,124 +75,121 @@ http://creativecommons.org/licenses/by/3.0/
 
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-package opensource.hexiano;
+package opensource.hexiano
 
-import java.io.File;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.TreeMap;
+import android.content.Context
+import android.os.Environment
+import android.util.Log
+import android.widget.Toast
+import java.io.File
+import java.util.TreeMap
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
-import android.content.Context;
-import android.os.Environment;
-import android.util.Log;
-import android.widget.Toast;
 
-public class GenericInstrument extends Instrument
-{
+class GenericInstrument(context: Context , instrument: String): Instrument(context) {
+    override var mInstrumentName = instrument
+    override var sounds_to_load: TreeMap<Int, MutableList<SoundLoadingTuple>>
 
-	public GenericInstrument(Context context, String instrument) throws IllegalAccessException
-	{
-		super(context);
-		
-		this.mExternal = true;
-		this.mInstrumentName = instrument;
+    init {
+        this.mExternal = true
 
-		Pattern pat = Pattern.compile("m([0-9]+)(v([0-9]+))?.*\\.[^\\.]*$"); // Pattern: anythingyouwant_mxxvyy.ext where xx is the midi note, and yy the velocity (velocity is optional)
-		File[] files = listExternalFiles(instrument+"/"); // Get the list of all files for this instrument (folder)
-		sounds_to_load = new TreeMap<Integer, List<ArrayList>>();
-		// For each file in this folder/instrument
-		for (File file : files)
-		{
-		    String fileName = file.getName();
-		    Log.d("GenericInstrument", "Found file: "+fileName);
-		    // If we find a midi note (matching the regexp)
-			int midiNoteNumber;
-			Matcher mat = pat.matcher(fileName);
-			if (mat.find())
-			{
-				// Parse the filename string to get the midi note
-				String midiNoteNumberStr = mat.group(1);
-				midiNoteNumber = Integer.parseInt(midiNoteNumberStr);
-				String filePath = file.getAbsolutePath();
-        		int velocity = 127;
-        		if (mat.groupCount() > 2 && mat.group(2) != null) {
-        			velocity = Integer.parseInt(mat.group(3));
-        		}
-				Log.d("GenericInstrument", "Found midi note: "+midiNoteNumberStr + " velocity " + Integer.toString(velocity) + " filepath " + filePath);
-				// And store it inside the array sounds with the midiNoteNumber being the id and filePath the resource to load
-				ArrayList tuple = new ArrayList(); // Use a generic tuple arraylist because here we will store the filepath string to the sound to be loaded for this note (SoundPool accepts filepath as an argument)
-				tuple.add(midiNoteNumber);
-				tuple.add(velocity);
-				tuple.add(filePath);
-				if (sounds_to_load.containsKey(midiNoteNumber)) {
-					List<ArrayList> temp = sounds_to_load.get(midiNoteNumber);
-					temp.add(tuple);
-					sounds_to_load.put(midiNoteNumber, temp);
-				} else {
-					List<ArrayList> temp = new ArrayList<ArrayList>();
-					temp.add(tuple);
-					sounds_to_load.put(midiNoteNumber, temp);
-				}
-				// Also set this note as a root note (Root Notes are notes we have files for, from which we will extrapolate other notes that are missing if any)
-				mRootNotes.put(midiNoteNumber, midiNoteNumber);
-				// Rate to play the file with, default is always used for root notes, we only change the rate on other notes (where we don't have a file available) to interpolate the frequency and thus the note
-				mRates.put(midiNoteNumber, 1.0f);
-			}
-		}
-		
-		// No sounds found? Show an error message then quit
-		if (sounds_to_load.size() == 0) {
-			// TODO: a better error dialog with nice OK button
-			Toast.makeText(context, mInstrumentName + ": " + R.string.error_no_soundfiles, Toast.LENGTH_LONG).show();
-			return;
-		}
+        /** Pattern: anythingyouwant_mxxvyy.ext where xx is the midi note,
+         * and yy the velocity (velocity is optional)*/
+        val pat = Pattern.compile("m([0-9]+)(v([0-9]+))?.*\\.[^\\.]*$")
 
-		// Extrapolate missing notes (for which we have no sound file) from available sound files
-		extrapolateSoundNotes();
-	}
+        /** Get the list of all files for this instrument (folder)*/
+        val files: List<File> = listExternalFiles("$instrument/")
+        sounds_to_load = TreeMap<Int, MutableList<SoundLoadingTuple>>()
+        // For each file in this folder/instrument
+        for (file in files) {
+            val fileName: String = file.getName()
+            Log.d("GenericInstrument", "Found file: $fileName")
+            // If we find a midi note (matching the regexp)
 
-	// List all external (eg: sd card) instruments (just the name of the subfolders)
-	public static ArrayList<String> listExternalInstruments() {
-		return GenericInstrument.listExternalInstruments("/hexiano/");
-	}
+            val mat: Matcher = pat.matcher(fileName)
+            if (mat.find()) {
+                // Parse the filename string to get the midi note
+                val midiNoteNumber: Int = mat.group(1)?.toInt() ?: 0
+                val filePath: String = file.absolutePath
+                val velocity: Int = mat.group(2)?.toInt() ?: 127
+                Log.d("GenericInstrument", "Found midi note: "+midiNoteNumber + " velocity " + Integer.toString(velocity) + " filepath " + filePath)
+                // And store it inside the array sounds with the midiNoteNumber being the id and filePath the resource to load
 
-	// List all external instruments (just the name of the subfolders)
-	public static ArrayList<String> listExternalInstruments(String path) {
-		ArrayList<String> Directories = new ArrayList<String>();
-		if (path.length() != 0) {
-			if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-				path = Environment.getExternalStorageDirectory().toString()+path;
-				Log.d("GenericInstrument::listExternalInstruments", "GenericInstrument: list external instruments (directories) from path: "+path);
+                val tuple = SoundLoadingTuple(
+                    midiNoteNumber = midiNoteNumber,
+                    velocity = velocity,
+                    resource = SoundLoadingTuple.LoadingResource.ExternalFilePath(filePath)
+                )
+                sounds_to_load[midiNoteNumber]?.add(tuple) ?: {
+                    sounds_to_load[midiNoteNumber] = mutableListOf<SoundLoadingTuple>(tuple)
+                }
+                // Also set this note as a root note (Root Notes are notes we have files for,
+                // from which we will extrapolate other notes that are missing if any)
+                mRootNotes[midiNoteNumber] = midiNoteNumber;
+                // Rate to play the file with, default is always used for root notes,
+                // we only change the rate on other notes (where we don't have a file available) to interpolate the frequency and thus the note
+                mRates[midiNoteNumber] = 1.0f
+            }
+        }
 
-			    File f = new File(path);
-			    File[] files = f.listFiles();
-			    if (files != null && files.length > 0) {
-				    for (File file : files) {
-				        if (file.isDirectory()) { // is directory
-				        	Directories.add(file.getName());
-				        }
-				    }
-			    }
-			}
-		}
-	    return Directories;
-	}
+        // No sounds found? Show an error message then quit
+        if (sounds_to_load.size == 0) {
+            // TODO: a better error dialog with nice OK button
+            Toast.makeText(context, mInstrumentName + ": " + R.string.error_no_soundfiles, Toast.LENGTH_LONG).show();
+        } else {
+            // Extrapolate missing notes (for which we have no sound file) from available sound files
+            extrapolateSoundNotes()
+        }
+    }
 
-	// List all files in the external instrument's folder
-	public static File[] listExternalFiles(String path) {
-		File[] Files = null;
-		if (path.length() != 0) {
-			if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-				path = Environment.getExternalStorageDirectory().toString()+"/hexiano/"+path;
-				Log.d("GenericInstrument::listExternalFiles", "GenericInstrument: list external files from path: "+path);
+    companion object {
+        /**List all external (eg: sd card) instruments (just the name of the subfolders)*/
+        fun listExternalInstruments():  List<String> = GenericInstrument.listExternalInstruments("/hexiano/")
 
-			    File f = new File(path);
-			    Files = f.listFiles();
-			}
-		}
-		return Files;
-	}
+        /**List all external instruments (just the name of the subfolders)*/
+        fun listExternalInstruments(p: String): List<String> {
+            val Directories = mutableListOf<String>()
+            var path = p
+            if (path.isNotEmpty()) {
+                if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                    path = Environment.getExternalStorageDirectory().toString() + path
+                    Log.d(
+                        "GenrcInstr.lsExtInstrs",
+                        "GenericInstrument: list external instruments (directories) from path: $path"
+                    )
 
+                    val f = File(path)
+                    val files = f.listFiles()
+                    if (files != null && files.isNotEmpty()) {
+                        for (file in files) {
+                            if (file.isDirectory()) { // is directory
+                                Directories.add(file.getName())
+                            }
+                        }
+                    }
+                }
+            }
+            return Directories
+        }
+
+        /**List all files in the external instrument's folder*/
+        fun listExternalFiles(p: String): List<File> {
+            var files: List<File>? = null
+            var path = p
+            if (path.isNotEmpty()) {
+                if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+                    path = Environment.getExternalStorageDirectory().toString() + "/hexiano/" + path
+                    Log.d(
+                        "GenrcInstr.listExtFiles",
+                        "GenericInstrument: list external files from path: $path"
+                    )
+
+                    val f = File (path)
+                    files = f.listFiles()?.toList()
+                }
+            }
+            return files ?: listOf()
+        }
+    }
 }

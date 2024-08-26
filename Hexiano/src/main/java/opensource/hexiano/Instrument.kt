@@ -27,19 +27,18 @@
 
 package opensource.hexiano
 
-import java.util.ArrayList
-import java.util.TreeMap
-
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import java.util.TreeMap
 import kotlin.math.pow
 
 abstract class Instrument(private val mContext: Context) {
 	//private AudioManager mAudioManager  = mContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 	// Instrument type definition
 
-	/**Loading external files (needing to pass Strings instead of val[]?). Defines if the third argument in sounds tuples is a resource id (val) or a file path (string)*/
+	/**Loading external files (needing to pass Strings instead of int[]?).
+	 * Defines if the third argument in sounds tuples is a resource id (int) or a file path (string)*/
 	var mExternal = false
 
 	/**Important for reference*/
@@ -47,32 +46,57 @@ abstract class Instrument(private val mContext: Context) {
 
 	// Sounds loading variables
 
-	/**raw list of sounds to load in SoundPool, each entry being a midiNoteNumber associated to a tuple of [midiNoteNumber, velocity, file resource id val or string file path]*/
-	abstract val sounds_to_load: TreeMap<Int, List<ArrayList<*>>>
+	/**raw list of sounds to load in SoundPool,
+	 * each entry being a midiNoteNumber associated to a tuple of
+	 * [midiNoteNumber, velocity, file resource id int or string file path]*/
+	abstract var sounds_to_load: TreeMap<Int, MutableList<SoundLoadingTuple>>
 
-	/** = sounds.iterator() when iterating through sounds_to_load in SoundPool.onLoadComplete(), contains a list of sound files (of different velocities) for one note*/
-	abstract var notes_load_queue: Iterator<List<ArrayList<*>>>
+	/** = sounds.iterator(); when iterating through sounds_to_load in SoundPool.onLoadComplete(),
+	 * contains a list of sound files (of different velocities) for one note*/
+	var notes_load_queue: Iterator<MutableList<SoundLoadingTuple>> = object : Iterator<MutableList<SoundLoadingTuple>>{
+		override fun hasNext(): Boolean = false
+		override fun next(): MutableList<SoundLoadingTuple> {
+			TODO("Not yet implemented")
+		}
+	}
 
-	/** = notes_load_queue.next() temporary holder that contains all sounds file (of different velocities) for one midi note*/
-	val currListOfTuples: MutableList<ArrayList<*>> = mutableListOf()
+	/** = notes_load_queue.next();
+	 * temporary holder that contains all sounds file (of different velocities) for one midi note*/
+	val currListOfTuples: MutableList<List<*>> = mutableListOf()
 
 	/** = currListOfTuples.iterator() contains one sound file at a time*/
-	abstract val sound_load_queue: Iterator<ArrayList<*>>
-	/** Sounds holder variables (when loading is completed) */
-	protected val mSounds = mutableMapOf<Int, TreeMap<Int, Int>?>() // List of all already loaded sound files, with their id (relative to velocity) for each midi note, to easily play the sounds. Format: [midiNoteNumber, [velocity, SoundPool sound id]]
-	/**Extrapolation rates: All rates for each midi note. Used to extrapolate missing note sounds from existing notes sounds (rootNotes). The frequency is extrapolated from the nearest rootNote available (see mRootNotes for the association). Format: [midiNote, rate]*/
-	protected val mRates = mutableMapOf<Int, Float>()
+	var sound_load_queue: Iterator<List<*>> = object: Iterator<List<*>>{
+		override fun hasNext(): Boolean = false
+		override fun next(): List<*> = arrayListOf<Any>()
+	}
 
-	/**Extrapolation association vector: for each midi note, define the nearest rootNote from which it should be extrapolated (if it's not already a rootNote). Format: [midiNote, rootNote]*/
+	// Sounds holder variables (when loading is completed)
+
+	/**List of all already loaded sound files,
+	 * with their id (relative to velocity) for each midi note,
+	 * to easily play the sounds.
+	 * Format: [midiNoteNumber, [velocity, SoundPool sound id]]*/
+	val mSounds = mutableMapOf<Int, TreeMap<Int, Int>?>()
+	/**Extrapolation rates: All rates for each midi note.
+	 * Used to extrapolate missing note sounds from existing notes sounds (rootNotes).
+	 * The frequency is extrapolated from the nearest rootNote available (see mRootNotes for the association).
+	 * Format: [midiNote, rate]*/
+	val mRates = mutableMapOf<Int, Float>()
+
+	/**Extrapolation association vector:
+	 * for each midi note,
+	 * define the nearest rootNote from which it should be extrapolated
+	 * (if it's not already a rootNote).
+	 * Format: [midiNote, rootNote]*/
 	val mRootNotes = mutableMapOf<Int, Int>()
 
-	/**Load valo SoundPool a sound from the APK resources*/
+	/**Load into SoundPool a sound from the APK resources*/
 	fun addSound(midiNoteNumber: Int, velocity: Int, soundId: Int) { // soundId is the APK ressource ID (given by java) index is the midiNoteNumber
 		// If there's already an entry for this midinote, we update it to add the velocity subentry
 		if (mSounds.containsKey(midiNoteNumber)) {
 			val velocity_soundid: TreeMap<Int, Int>? = mSounds.get(midiNoteNumber) // fetch the midinote entry (containing all previous velocity subentries)
 			velocity_soundid?.put(velocity, Play.mSoundPool.load(mContext, soundId, 1)) // add the velocity subentry
-			mSounds.put(midiNoteNumber, velocity_soundid) // update it back valo the midinote entry
+			mSounds.put(midiNoteNumber, velocity_soundid) // update it back into the midinote entry
 		// Else there's no entry for this midinote, we just create it
 		} else {
 			// Just create an entry for this midinote and use the velocity as the only subentry (until it gets updated if there are other velocities available for this midi note)
@@ -81,8 +105,8 @@ abstract class Instrument(private val mContext: Context) {
 			mSounds.put(midiNoteNumber, velocity_soundid)
 		}
 	}
-	
-	/** Load valo SoundPool an external sound from a given path (eg: on SD card) */
+
+	/** Load into SoundPool an external sound from a given path (eg: on SD card) */
 	fun addSound(midiNoteNumber: Int, velocity: Int, path: String) // path is the full path to a sound file index is the midiNoteNumber
 	{
 		// If there's already an entry for this midinote, we update it to add the velocity subentry
@@ -92,17 +116,22 @@ abstract class Instrument(private val mContext: Context) {
 			mSounds[midiNoteNumber] = velocity_soundid // update it back into the midinote entry
 		// Else there's no entry for this midinote, we just create it
 		} else {
-			// Just create an entry for this midinote and use the velocity as the only subentry (until it gets updated if there are other velocities available for this midi note)
+			// Just create an entry for this midinote and use the velocity as the only subentry
+			// (until it gets updated if there are other velocities available for this midi note)
 			val velocity_soundid: TreeMap<Int, Int> = TreeMap<Int, Int>()
 			velocity_soundid.put(velocity, Play.mSoundPool.load(path, 1))
 			mSounds.put(midiNoteNumber, velocity_soundid)
 		}
 	}
-	
+
 	// Limit the range of sounds and notes to the given list of notes
 	fun limitRange(ListOfMidiNotesNumbers: List<Int>) {
 		// -- Delete first the root notes that are not directly used
-		// (if the rootNote is not visible then we just delete its entry in mRootNotes and mRates, but NOT the reference from extrapolated keys, this ensures that we trim useless rootNotes that are neither visible neither extrapolated from, but we keep useful rootNotes that are either visible on-screen _or_ extrapolated from (no index in mRootNotes but used as a value for other midi notes))
+		// (if the rootNote is not visible then we just delete its entry in mRootNotes and mRates,
+		// but NOT the reference from extrapolated keys,
+		// this ensures that we trim useless rootNotes that are neither visible neither extrapolated from,
+		// but we keep useful rootNotes that are either visible on-screen _or_ extrapolated from
+		// (no index in mRootNotes but used as a value for other midi notes))
 		 var notesToDelete = mutableListOf<Int>()
 		// Loop through all root notes
 		for (midiNoteNumber: Int in mRootNotes.keys) {
@@ -118,11 +147,14 @@ abstract class Instrument(private val mContext: Context) {
 		}
 
 		// -- Then delete all the not used sounds
-		// (now that only visible or extrapolated from rootNotes are still in mRootNotes, we can remove all sounds that are neither directly visible on-screen, nor extrapolated from. A bit like the first step above but here we do it for all sounds, not just rootNotes).
+		// (now that only visible or extrapolated from rootNotes are still in mRootNotes,
+		// we can remove all sounds that are neither directly visible on-screen, nor extrapolated from.
+		// A bit like the first step above but here we do it for all sounds, not just rootNotes).
 		notesToDelete = mutableListOf<Int>()
 		// Loop through all found notes (from sounds files)
 		for (midiNoteNumber: Int in sounds_to_load.keys) {
-			// If the note is not in the limited range and there's no note extrapolated from this note's sound, we remove it and its associated sounds
+			// If the note is not in the limited range and there's no note extrapolated from this note's sound,
+			// we remove it and its associated sounds
 			if (!ListOfMidiNotesNumbers.contains(midiNoteNumber) && !mRootNotes.values.contains(midiNoteNumber) ) {
 				notesToDelete.add(midiNoteNumber)
 			}
@@ -139,12 +171,17 @@ abstract class Instrument(private val mContext: Context) {
 		// -- Recreate the iterator to generate all sounds of all notes
 		notes_load_queue = sounds_to_load.values.iterator()
 	}
-	
+
 	fun extrapolateSoundNotes() {
 		// Extrapolate missing notes from Root Notes (notes for which we have a sound file)
 		var previousRate = 1.0f
 		var previousRootNote = -1
-		val beforeEmptyNotes = mutableListOf<Int>() // Notes before any root note, that we will extrapolate (by downpitching) as soon as we find one root note. TODO: downpitching by default and uppitch only for the rest. Downpitching should not cause any aliasing, but we have to check if the extrapolation doesn't cause evil downpitching. See http://www.discodsp.com/highlife/aliasing/
+		 /**Notes before any root note, that we will extrapolate (by downpitching) as soon as we find one root note.
+		 TODO: downpitching by default and uppitch only for the rest.
+		  Downpitching should not cause any aliasing,
+		  but we have to check if the extrapolation doesn't cause evil downpitching.
+		  See http://www.discodsp.com/highlife/aliasing/ */
+		val beforeEmptyNotes = mutableListOf<Int>()
 		val oneTwelfth = 1.0/12.0
 		var firstRootNote = true
 		var minRate = Float.POSITIVE_INFINITY
@@ -160,7 +197,9 @@ abstract class Instrument(private val mContext: Context) {
 					if (beforeEmptyNotes.size > 0) {
 						for (bNoteId: Int in beforeEmptyNotes) {
 							mRootNotes.put(bNoteId, previousRootNote)
-							val beforeRate = previousRate / Math.pow(Math.pow(2.0, oneTwelfth), (previousRootNote-bNoteId).toDouble()) // a = b / (2^1/12)^n , with n positive number of semitones between frequency a and b
+
+							// a = b / (2^1/12)^n , with n positive number of semitones between frequency a and b
+							val beforeRate = previousRate / Math.pow(Math.pow(2.0, oneTwelfth), (previousRootNote-bNoteId).toDouble())
 							mRates.put(bNoteId, beforeRate.toFloat())
 							// Update the min and max rate found (only used for warning message)
 							if (beforeRate < minRate) minRate = beforeRate.toFloat()
@@ -183,7 +222,9 @@ abstract class Instrument(private val mContext: Context) {
 				}
 			}
 		}
-		// Warning message when min rate or max rate outside of SoundPoolt rate range (rate is guaranteed to be supported between [0.5, 2.0] on all devices, but some devices may also support rates outside of this range, generally below 0.5)
+		// Warning message when min rate or max rate outside of SoundPoolt rate range
+		// (rate is guaranteed to be supported between [0.5, 2.0] on all devices,
+		// but some devices may also support rates outside of this range, generally below 0.5)
 		if (minRate < 0.5f && maxRate > 2.0f) {
 			Toast.makeText(mContext, R.string.warning_rate_out_of_range, Toast.LENGTH_LONG).show()
 			Log.d("Instr.extrapSoundNotes", mContext.resources.getString(R.string.warning_rate_out_of_range))
@@ -195,7 +236,7 @@ abstract class Instrument(private val mContext: Context) {
 			Log.d("Instr.extrapSoundNotes", mContext.resources.getString(R.string.warning_rate_out_of_range_max))
 		}
 	}
-	
+
 	fun play(midiNoteNumber: Int, pressure: Int): IntArray {
 		return this.play(midiNoteNumber, pressure.toFloat(), 0)
 	}
@@ -203,23 +244,23 @@ abstract class Instrument(private val mContext: Context) {
 	/**Play a note sound given the midi number,
 	 * the pressure and optionally a loop number
 	 * (-1 for indefinite looping, 0 for no looping, >0 for a definite number of loops)
-	@return val[] array val of SoundPool StreamId (to be able to stop the streams later on) */
+	@return int[] array int of SoundPool StreamId (to be able to stop the streams later on) */
 	fun play(midiNoteNumber: Int, pressure: Float, loop: Int): IntArray {
-		// == Get root note and frequency if this note is valerpolated
-		// Note: a root note is a midi number where we have a sound, the other midi notes sounds being valerpolated
+		// == Get root note and frequency if this note is interpolated
+		// Note: a root note is a midi number where we have a sound, the other midi notes sounds being interpolated
 		Log.d("Instrument", "play($midiNoteNumber)")
 		if (mRootNotes.isEmpty()) return intArrayOf(0) // no sound note available, exit
 		val index = mRootNotes[midiNoteNumber] // get root note for this midi number
 		Log.d("Instrument", "rootNote found: $index")
-		if (!mSounds.containsKey(index)) return intArrayOf(-1) // no sound (root or valerpolated) available (yet?) for this note, exit
+		if (!mSounds.containsKey(index)) return intArrayOf(-1) // no sound (root or interpolated) available (yet?) for this note, exit
 	    val rate = mRates[midiNoteNumber] ?: 0f // Get the rate to which to play this note: 1.0f (normal) for root notes, another number for other notes (changing rate valerpolates the note sound rate is computed at loading)
-	
+
 		//val streamVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC) / mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
 	    var streamVolume = 1.0f // streamVolume range: 0.0f - 1.0f
 
 		// == Play with the correct velocity
 		val velocity_soundid: TreeMap<Int, Int> = mSounds[index] ?: TreeMap()// use a TreeMap to make sure that sounds are sorted in ascending order by velocity
-		
+
 		// -- Compute the velocity value from user's pressure and scale the value (normalize between min and max pressure, and then scale over min and max velocity notes for this midi note)
 		val max_vel = velocity_soundid.lastKey() // max velocity available for this note
 		val min_vel = velocity_soundid.firstKey() // min velocity available for this note
@@ -238,7 +279,7 @@ abstract class Instrument(private val mContext: Context) {
 		if (HexKeyboard.mVelocityBoost > 0) velocity = Math.round( velocity * (1.0f + HexKeyboard.mVelocityBoost/100f ) )
 		// Final check: make sure velocity is never above 127
 		if (velocity > 127) velocity = 127
-		
+
 		// -- Get the corresponding sound(s) for the user's velocity and from the available velocities
 		var lower_vel = 0 // lower velocity bound if user's velocity is in-between (to select the sound at the velocity below the user's pressure)
 		var higher_vel = 0 // higher velocity bound if user's velocity is in-between (to select the sound at the velocity higher to the user's pressure, and we will mix it with the lower_vel sound to simulate a velocity that is in-between)
@@ -260,7 +301,7 @@ abstract class Instrument(private val mContext: Context) {
 			// For each velocity available for this note (iterate in ascending order from lowest velocity to highest)
 			for (vel in velocity_soundid.entries) {
 				higher_vel = vel.key // get the current velocity in TreeMap (at the end, it will store the higher velocity bound sound)
-	
+
 				// Case 1: higher bound: one sound when user's velocity is equal or lower than any available velocity sound
 				if (higher_vel == velocity || // if current available velocity is exactly equal to user's velocity
 						(higher_vel > velocity && lower_vel == 0)) { // or if it's above usen's velocity but there's no lower velocity available
@@ -317,8 +358,8 @@ abstract class Instrument(private val mContext: Context) {
 	fun loop(midiNoteNumber: Int, pressure: Float): IntArray {
 		return this.play(midiNoteNumber, pressure, -1)
 		/*
-		val streamVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC) 
+		val streamVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
 		mSoundPool.play(mSounds.get(index), streamVolume, streamVolume, 1, -1, 1f)
-		*/ 
+		*/
 	}
 }
