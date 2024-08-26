@@ -87,61 +87,61 @@ import android.util.Log
 import android.widget.Toast
 
 class Piano(context: Context) : Instrument(context) {
-	override var mInstrumentName: String = "Piano"
-	override var sounds_to_load = TreeMap<Int, MutableList<SoundLoadingTuple>>() // Are there really no tuples in Java?!
+    override var mInstrumentName: String = "Piano"
+    override var sounds_to_load = TreeMap<Int, MutableList<SoundLoadingTuple>>() // Are there really no tuples in Java?!
 
-	init {
-		val pat = Pattern.compile("^pno_m([0-9]+)(v([0-9]+))?") // Pattern: anythingyouwant_mxxvyy.ext where xx is the midi note, and yy the velocity (velocity is optional)
-		val raw = R.raw::class.java
-		val fields = raw.getFields() // Fetch all the files (fields) in Raw directory
+    init {
+        val pat = Pattern.compile("^pno_m([0-9]+)(v([0-9]+))?") // Pattern: anythingyouwant_mxxvyy.ext where xx is the midi note, and yy the velocity (velocity is optional)
+        val raw = R.raw::class.java
+        val fields = raw.getFields() // Fetch all the files (fields) in Raw directory
 
-		// For each file (field) in the Raw directory
-		for (field in fields) {
-		    try {
-		    	// Filter out any other file except the ones that are sounds for this instrument (starts with "pno" for piano)
-		    	val fieldName = field.getName()
-		        if (fieldName.startsWith("pno", 0)) {
-				    // If we find a midi note (matching the regexp)
-		        	val mat = pat.matcher(fieldName)
-		        	if (mat.find()) {
-						val midiNoteNumber = mat.group(1).toInt()
-		        		val fieldValue = field.getInt(null)
-		        		val velocity =  if (mat.groupCount() > 2 && mat.group(2) != null) {
-		        			mat.group(3).toInt()
-		        		} else 127
-		        		Log.d("Piano",
-							"Found midi note: $midiNoteNumber velocity $velocity fileid $fieldValue"
-						)
+        // For each file (field) in the Raw directory
+        for (field in fields) {
+            try {
+                // Filter out any other file except the ones that are sounds for this instrument (starts with "pno" for piano)
+                val fieldName = field.getName()
+                if (fieldName.startsWith("pno", 0)) {
+                    // If we find a midi note (matching the regexp)
+                    val mat = pat.matcher(fieldName)
+                    if (mat.find()) {
+                        val midiNoteNumber = mat.group(1).toInt()
+                        val fieldValue = field.getInt(null)
+                        val velocity =  if (mat.groupCount() > 2 && mat.group(2) != null) {
+                            mat.group(3).toInt()
+                        } else 127
+                        Log.d("Piano",
+                            "Found midi note: $midiNoteNumber velocity $velocity fileid $fieldValue"
+                        )
 
-						// Use a tuple arraylist of integers,
-						// which will be the int identifier of the raw resource,
-						// which in java are defined by an integer.
-						// SoundPool can directly load from resource identifiers.
-						val tuple = SoundLoadingTuple(
-							midiNoteNumber = midiNoteNumber,
-							velocity = velocity,
-							resource = SoundLoadingTuple.LoadingResource.AndroidResourceId(fieldValue),
-						)
-						sounds_to_load[midiNoteNumber]?.add(tuple) ?: {
-							sounds_to_load[midiNoteNumber] = mutableListOf<SoundLoadingTuple>(tuple)
-						}
-						mRootNotes[midiNoteNumber] = midiNoteNumber
-						mRates[midiNoteNumber] = 1.0f
-					}
-		        }
-		    }
-		    catch(e: IllegalAccessException) {
-		        Log.e("REFLECTION", String.format("%s threw IllegalAccessException.",
-		            field.getName()), e)
-		    }
-		}
-		
-		// No sounds found? Show an error message then quit
-		if (sounds_to_load.size == 0) {
-			// TODO: a better error dialog with nice OK button
-			Toast.makeText(context, mInstrumentName + ": " + R.string.error_no_soundfiles, Toast.LENGTH_LONG).show()
-		} else {// Extrapolate missing notes (for which we have no sound file) from available sound files
-			extrapolateSoundNotes()
-		}
-	}
+                        // Use a tuple arraylist of integers,
+                        // which will be the int identifier of the raw resource,
+                        // which in java are defined by an integer.
+                        // SoundPool can directly load from resource identifiers.
+                        val tuple = SoundLoadingTuple(
+                            midiNoteNumber = midiNoteNumber,
+                            velocity = velocity,
+                            resource = SoundLoadingTuple.LoadingResource.AndroidResourceId(fieldValue),
+                        )
+                        sounds_to_load[midiNoteNumber]?.add(tuple) ?: {
+                            sounds_to_load[midiNoteNumber] = mutableListOf<SoundLoadingTuple>(tuple)
+                        }
+                        mRootNotes[midiNoteNumber] = midiNoteNumber
+                        mRates[midiNoteNumber] = 1.0f
+                    }
+                }
+            }
+            catch(e: IllegalAccessException) {
+                Log.e("REFLECTION", String.format("%s threw IllegalAccessException.",
+                    field.getName()), e)
+            }
+        }
+        
+        // No sounds found? Show an error message then quit
+        if (sounds_to_load.size == 0) {
+            // TODO: a better error dialog with nice OK button
+            Toast.makeText(context, mInstrumentName + ": " + R.string.error_no_soundfiles, Toast.LENGTH_LONG).show()
+        } else {// Extrapolate missing notes (for which we have no sound file) from available sound files
+            extrapolateSoundNotes()
+        }
+    }
 }
