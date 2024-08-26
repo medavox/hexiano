@@ -27,71 +27,69 @@
 
 package opensource.hexiano
 
-import java.util.HashMap
-
 class Note(
-	protected val mMidiNoteNumber: Int,
+	val midiNoteNumber: Int,
 	/**Just for reference, can be shown as a label on the key, but useless otherwise for the Note*/
-	protected val mKeyNumber: Int
+	val keyNumber: Int
 ) {
-	protected val mOctave: Int
-	protected val mFlatName: String?
-    protected val mSharpName: String?
+	val octave: Int
+	val flatName: String
+    val sharpName: String
 
 	init {
-		mFlatName = getFlatNameForNoteNumber(mMidiNoteNumber)
-		mSharpName = getSharpNameForNoteNumber(mMidiNoteNumber)
-		mOctave = getOctaveForNoteNumber(mMidiNoteNumber)
+		flatName = getFlatNameForNoteNumber(midiNoteNumber)
+		sharpName = getSharpNameForNoteNumber(midiNoteNumber)
+		octave = getOctaveForNoteNumber(midiNoteNumber)
 	}
 	
-	fun getFlatName() = mFlatName + mOctave
+	fun getFlatName() = flatName + octave
 
-	fun getSharpName() = mSharpName + mOctave
+	fun getSharpName() = sharpName + octave
 
-	fun getMidiNoteNumber(): Int = mMidiNoteNumber
+	fun getMidiNoteNumber(): Int = midiNoteNumber
 
 	fun getDisplayString(labelType: String, showOctave: Boolean): String {
-		var noteStr: String = "?"
+		var noteStr = "?"
 
 		when (labelType) {
 			"None" -> {
 				return ""
 			}
 			"Key Number (DEV)" -> {
-				return("" + mKeyNumber)
+				return("" + keyNumber)
 			}
 			"MIDI Note Number" -> {
-				return("" + mMidiNoteNumber)
+				return("" + midiNoteNumber)
 			}
 			"Whole Tone Number" -> {
-				noteStr = "" + mMidiNoteNumber/2
-				if (mMidiNoteNumber % 2 == 1) {
+				noteStr = "" + midiNoteNumber/2
+				if (midiNoteNumber % 2 == 1) {
 					noteStr += ".5"
 				}
 
 				return(noteStr)
 			}
 			"Deutsch" -> {
-				noteStr = mToGerman[mSharpName]!!
+				noteStr = toGerman[sharpName]!!
 			}
 			"English" -> {
-				noteStr = mToEnglish[mSharpName]!!
+				noteStr = toEnglish[sharpName]!!
 			}
 			"Solfege" -> {
-				noteStr = mToSolfege[mSharpName]!!
+				noteStr = toSolfege[sharpName]!!
 			}
 		}
 	  
 		if (showOctave)
 		{
-			noteStr += mOctave
+			noteStr += octave
 		}
 	    
 	    return(noteStr)
 	}
 
 	companion object {
-		val mToGerman = mapOf<String, String>(
+		val toGerman = mapOf<String, String>(
 			"A"  to "A",
 			"A#" to "ais",
 			"Bb" to "B",
@@ -114,7 +112,7 @@ class Note(
 		/**	We should use \u266F for the sharp symbol, but this has a lot of
 		extra space around it for some reason. So, for now, we will just
 		use the # character.*/
-		val mToSolfege = mapOf<String, String>(
+		val toSolfege = mapOf<String, String>(
 			"A"  to "La",
 			"A#" to "La#",
 			"Bb" to "Si\u266D",
@@ -134,7 +132,7 @@ class Note(
 			"Ab" to "La\u266D",
 		)
 
-		val mToEnglish = mapOf<String, String>(
+		val toEnglish = mapOf<String, String>(
 			"A"  to "A",
 			"A#" to "A#",
 			"Bb" to "B\u266D",
@@ -154,7 +152,7 @@ class Note(
 			"Ab" to "A\u266D",
 		)
 
-		val mFlatForNumber = mapOf<Int, String>(
+		val flatForNumber = mapOf<Int, String>(
 			 0 to "C",
 			 1 to "Db",
 			 2 to "D",
@@ -169,7 +167,7 @@ class Note(
 			11 to "B",
 		)
 
-		val mSharpForNumber = mapOf<Int, String>(
+		val sharpForNumber = mapOf<Int, String>(
 			 0 to "C",
 			 1 to "C#",
 			 2 to "D",
@@ -184,7 +182,7 @@ class Note(
 			11 to "B",
 		)
 
-		val mNumberForSharp = mapOf<String, Int>(
+		val numberForSharp = mapOf<String, Int>(
 			"C"  to 0,
 			"C#" to 1,
 			"D"  to 2,
@@ -200,20 +198,20 @@ class Note(
 		)
 
 		fun getNoteNumber(sharpName: String, octave: Int): Int {
-			val noteNumber: Int = (octave * 12) + mNumberForSharp[sharpName]!! + 12
+			val noteNumber: Int = (octave * 12) + numberForSharp[sharpName]!! + 12
 			return noteNumber
 		}
 	}
-	fun getModifierNameForNoteNumber(midiNoteNumber: Int): String = mFlatForNumber[midiNoteNumber]!!
+	fun getModifierNameForNoteNumber(midiNoteNumber: Int): String = flatForNumber[midiNoteNumber]!!
 
 	fun getFlatNameForNoteNumber(midiNoteNumber: Int): String {
 		val flatNumber: Int = midiNoteNumber % 12
-		return mFlatForNumber[flatNumber]!!
+		return flatForNumber[flatNumber]!!
 	}
 	
 	fun getSharpNameForNoteNumber(midiNoteNumber: Int): String {
 		val flatNumber: Int = midiNoteNumber % 12
-		return mSharpForNumber[flatNumber]!!
+		return sharpForNumber[flatNumber]!!
 	}
 	
 	fun getOctaveForNoteNumber(midiNoteNumber: Int): Int {
