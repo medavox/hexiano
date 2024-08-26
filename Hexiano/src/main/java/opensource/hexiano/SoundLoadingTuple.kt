@@ -10,17 +10,7 @@ data class SoundLoadingTuple(
     val resource: LoadingResource
 ) {
     sealed class LoadingResource {
-        abstract fun getResource(): File
-
-        class ExternalFilePath(val path: String) : LoadingResource() {
-            override fun getResource(): File {
-                TODO("Not yet implemented")
-            }
-        }
-        class AndroidResourceId(val id: Int) : LoadingResource() {
-            override fun getResource(): File {
-                TODO("Not yet implemented")
-            }
-        }
+        class ExternalFilePath(val path: String) : LoadingResource()
+        class AndroidResourceId(val id: Int) : LoadingResource()
     }
 }
