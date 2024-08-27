@@ -43,7 +43,7 @@ class CC(
 
     fun getMidiCCNumber(): Int = mMidiCCNumber
 
-    fun getDisplayString(labelType: String, showOctave: Boolean): String = when (labelType) {
+    fun getDisplayString(labelType: String?, showOctave: Boolean): String = when (labelType) {
         "None" -> ""
         "Key Number (DEV)" -> "" + mKeyNumber
         "MIDI Note Number" -> "CC$mMidiCCNumber"

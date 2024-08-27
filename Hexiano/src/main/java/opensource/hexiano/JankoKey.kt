@@ -37,7 +37,7 @@ class JankoKey(
 	private var mOctaveGroupNumber: Int
 ) : HexKey(context, radius, center, midiNoteNumber, instrument, keyNumber) {
 
-	protected override fun getPrefs()
+	override fun getPrefs()
 	{
 		mKeyOrientation = mPrefs.getString("jankoKeyOrientation", null)
 	}

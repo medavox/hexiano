@@ -7,7 +7,7 @@ class AboutDialog(context: Context): Dialog(context)
 {
     init {
         val versionName: String = try {
-        	context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
         } catch (ex: Exception) {
             "0.0a"
         }

@@ -48,7 +48,7 @@ class Note(
 
     fun getMidiNoteNumber(): Int = midiNoteNumber
 
-    fun getDisplayString(labelType: String, showOctave: Boolean): String {
+    fun getDisplayString(labelType: String?, showOctave: Boolean): String {
         var noteStr = "?"
 
         when (labelType) {
@@ -84,7 +84,7 @@ class Note(
             noteStr += octave
         }
         
-        return(noteStr)
+        return noteStr
     }
 
     companion object {

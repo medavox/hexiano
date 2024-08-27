@@ -35,7 +35,7 @@ class SustainKey(
 	instrument: Instrument,
 	keyNumber: Int
 ): ModifierKey(context, radius, center, 64, instrument, keyNumber) {
-	override fun getColor(): Int = if (mSpecialColor != 0) mSpecialColor else mWhiteColor
+	override fun getColor(): Int = if (colorTheme.mSpecialColor != 0) colorTheme.mSpecialColor else colorTheme.mWhiteColor
 
 	override fun play() {
 		if (HexKeyboard.mSustainHold == true && getPressed() == true) {
